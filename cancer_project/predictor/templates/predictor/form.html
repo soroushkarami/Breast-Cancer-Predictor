@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <style>
+        .prediction-box{
+            margin-top:20px;
+            padding:20px;
+            border-radius:8px;
+            font-size:18px;
+            font-weight:bold;
+            width:420px;
+        }
+
+        .malignant{
+            background-color:#ffdddd;
+            border-left:8px solid #e74c3c;
+            color:#8b0000;
+        }
+
+        .benign{
+            background-color:#ddffdd;
+            border-left:8px solid #27ae60;
+            color:#145a32;
+        }
+    </style>
+
+
+</head>
+<body>
+<h2>Breast Cancer Predictor</h2>
+
+{% if error %}
+<div style="color: red; font-weight:bold; margin-bottom:10px;">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="POST">
+
+    <!-- Model Choice -->
+    <label>Select Model</label>
+    <select name="model_choice">
+        <option value="logistic">Logistic Regression</option>
+        <option value="knn">KNN</option>
+        <option value="svm">SVM</option>
+    </select><br><br>
+
+    <!-- Checkbox -->
+    <label>
+        <input type="checkbox" name="comparison">
+        Compare all models
+    </label><br><br>
+
+    <!-- Inputs -->
+    {% csrf_token %}
+
+    <label>radius_mean (6 - 30)</label>
+    <input type="number" step="0.01" name="f1" min="6" max="30" required><br><br>
+    <label>texture_mean (9 - 40)</label>
+    <input type="number" step="0.01" name="f2" min="9" max="40" required><br><br>
+    <label>concave points_mean (0 - 0.3)</label>
+    <input type="number" step="0.0001" name="f3" min="0" max="0.3" required><br><br>
+    <label>radius_worst (7 - 40)</label>
+    <input type="number" step="0.01" name="f4" min="7" max="40" required><br><br>
+    <label>perimeter_worst (50 - 250)</label>
+    <input type="number" step="0.01" name="f5" min="50" max="250" required><br><br>
+    <label>area_worst (200 - 3000)</label>
+    <input type="number" step="0.01" name="f6" min="200" max="3000" required><br><br>
+    <label>concave points_worst (0 - 0.35)</label>
+    <input type="number" step="0.0001" name="f7" min="0" max="0.35" required><br><br>
+
+    <button type="submit">Predict</button>
+</form>
+
+{% if results %}
+    {% for res in results %}
+            <div class="prediction-box {% if 'Malignant' in res %}malignant{% elif 'Benign' in res %}benign{% endif %}">
+                {{ res }}
+            </div>
+    {% endfor %}
+{% endif %}
+
+
+<!-- download csv button -->
+<br>
+<a href="{% url 'export_history' %}">
+    <button type="button">Download History CSV</button>
+</a>
+<br><br>
+
+
+<!-- To show history: -->
+<h2>HISTORY</h2>
+<table border="1">
+    <tr style="background-color: #f2f2f2;">
+        <th>Time</th>
+        <th>Result</th>
+        <th>Confidence</th>
+        <th>Model</th>
+    </tr>
+
+    {% for p in history %}
+    <tr>
+        <!-- Time Column -->
+        <td>{{ p.created_at|date:"Y-m-d H:i:s" }}</td>
+
+        <!-- Result Column -->
+        <td>
+            {% if p.prediction == 1 %}
+                <span style="color:red;font-weight:bold;">Malignant</span>
+            {% else %}
+                <span style="color:green;font-weight:bold;">Benign</span>
+            {% endif %}
+        </td>
+
+        <!-- Confidence column -->
+        <td>{{ p.probability|floatformat:4 }}</td>
+
+        <!-- Model Column -->
+        <td>
+            {% if p.model_used == 'knn' %}
+                KNN
+            {% elif p.model_used == 'svm' %}
+                SVM
+            {% else %}
+                Logistic Regression
+            {% endif %}
+        </td>
+
+    </tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>
